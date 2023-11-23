@@ -1,7 +1,6 @@
 FROM bde2020/spark-submit:3.3.0-hadoop3.3
 
 LABEL maintainer="Your Name <your.email@example.com>"
-
 # Create /app directory in the container
 RUN mkdir /app
 
@@ -14,7 +13,7 @@ COPY ./app /app
 
 # Set the working directory to /app
 WORKDIR /app
-
+# RUN /usr/bin/python3.7 -m pip install --upgrade pip
 # Optional: Install dependencies if needed
 RUN pip3 install -r requirements.txt
 
