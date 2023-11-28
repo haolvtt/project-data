@@ -1,41 +1,36 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import expr
-def consume_kafka_message(spark, bootstrap_servers, topic_name):
-    # Read from Kafka using PySpark Structured Streaming
-    print("ALO 1")
-    df = spark \
-        .readStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", bootstrap_servers) \
-        .option("subscribe", topic_name) \
-        .load()
-    print("ALO 2")
-    # Extract the value from the Kafka message
-    df = df.selectExpr("CAST(value AS STRING)")
-    print("ALO 3")
-    # Print the content of the message to the console
-    query = df.writeStream \
-        .outputMode("append") \
-        .format("console") \
-        .start()
-    
-    print("ALO 4")
-    # Await termination
-    query.awaitTermination()
-    print("ALO 5")
+from pyspark.sql.functions import explode, split
+import logging
 
 if __name__ == "__main__":
-    # Thông tin Kafka broker
-    bootstrap_servers = 'kafka:9092'  # Thay thế bằng địa chỉ Kafka broker của bạn
+    # Tắt log của Spark
+    spark = SparkSession.builder.appName("KafkaSparkDemo").getOrCreate()
+    spark.sparkContext.setLogLevel("ERROR")
 
-    # Tên của topic bạn muốn nhận tin nhắn từ
-    kafka_topic = 'my-topic'  # Thay thế bằng tên Kafka topic của bạn
+    # Bạn cũng có thể tắt log cho các thư viện khác như Kafka
+    logger = logging.getLogger("py4j")
+    logger.setLevel(logging.ERROR)
 
-    # Create a Spark session
-    spark = SparkSession.builder \
-        .appName("KafkaToConsole") \
-        .getOrCreate()
-    print("Before consume")
-    # Gọi hàm để nhận tin nhắn từ topic
-    consume_kafka_message(spark, bootstrap_servers, kafka_topic)
-    print("After consume")
+    # Define Kafka parameters
+    kafka_params = {
+        "kafka.bootstrap.servers": "kafka:9092",
+        "subscribe": "your_topic_name",
+        "startingOffsets": "earliest",  # You can adjust this based on your needs
+    }
+
+    # Read data from Kafka as a streaming DataFrame
+    kafka_stream_df = spark.readStream.format("kafka").options(**kafka_params).load()
+
+    # Extract value column and split into words
+    words_df = kafka_stream_df.selectExpr("CAST(value AS STRING) as value").select(
+        explode(split("value", " ")).alias("word")
+    )
+
+    # Perform word count
+    word_count_df = words_df.groupBy("word").count()
+
+    # Output the result to the console (for testing purposes)
+    query = word_count_df.writeStream.outputMode("complete").format("console").start()
+
+    # Wait for the streaming query to finish
+    query.awaitTermination()
