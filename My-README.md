@@ -55,7 +55,7 @@ fi
 
 ```
 Step 1: kafka-topics.sh --create --topic thanh-test --bootstrap-server localhost:9092
-Step 2: kafka-console-producer.sh --broker-list localhost:9020 --topic thanh-test
+Step 2: kafka-console-producer.sh --broker-list localhost:9092 --topic thanh-test
 ```
 
 ## Hadoop
