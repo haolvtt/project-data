@@ -1,4 +1,4 @@
-## How to run
+# How to run
 
 ```
 Step 1: git clone 'this repository'
@@ -11,51 +11,55 @@ Step 7: run docker-compose up -d
 Step 8: Complete
 ```
 
--- tai file jar, nem vao container, chay code ben duoi app.py
--- code duoi dang bi loi ko doc dc
+# Spark-submit-app
+
+## file submit.sh
 
 ```
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import expr
-def consume_kafka_message(spark, bootstrap_servers, topic_name):
-    # Read from Kafka using PySpark Structured Streaming
-    print("ALO 1")
-    df = spark \
-        .readStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", bootstrap_servers) \
-        .option("subscribe", topic_name) \
-        .load()
+#!/bin/bash
 
-    df.printSchema()
+export SPARK_MASTER_URL=spark://${SPARK_MASTER_NAME}:${SPARK_MASTER_PORT}
+export SPARK_HOME=/spark
 
-    print("alo")
+/wait-for-step.sh
+/execute-step.sh
 
-    readStringDF = df.selectExpr("CAST(value AS STRING)")
+if [ ! -z "${SPARK_APPLICATION_JAR_LOCATION}" ]; then
+    echo "Submit application ${SPARK_APPLICATION_JAR_LOCATION} with main class ${SPARK_APPLICATION_MAIN_CLASS} to Spark master ${SPARK_MASTER_URL}"
+    echo "Passing arguments ${SPARK_APPLICATION_ARGS}"
+    /${SPARK_HOME}/bin/spark-submit \
+        --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 \
+        --class ${SPARK_APPLICATION_MAIN_CLASS} \
+        --master ${SPARK_MASTER_URL} \
+        ${SPARK_SUBMIT_ARGS} \
+        ${SPARK_APPLICATION_JAR_LOCATION} ${SPARK_APPLICATION_ARGS}
+else
+    if [ ! -z "${SPARK_APPLICATION_PYTHON_LOCATION}" ]; then
+        echo "Submit application ${SPARK_APPLICATION_PYTHON_LOCATION} to Spark master ${SPARK_MASTER_URL}"
+        echo "Passing arguments ${SPARK_APPLICATION_ARGS}"
+        PYSPARK_PYTHON=python3  /spark/bin/spark-submit \
+            --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 \
+            --master ${SPARK_MASTER_URL} \
+            ${SPARK_SUBMIT_ARGS} \
+            ${SPARK_APPLICATION_PYTHON_LOCATION} ${SPARK_APPLICATION_ARGS} \
+    else
+        echo "Not recognized application."
+    fi
+fi
 
-    print("ALO 3")
-    # Print the content of the message to the console
-    readStringDF.writeStream \
-        .format("console") \
-        .outputMode("append") \
-        .start() \
-        .awaitTermination()
-    print("ALO 5")
+/finish-step.sh
 
-if __name__ == "__main__":
-    # Thông tin Kafka broker
-    bootstrap_servers = 'kafka:9092'  # Thay thế bằng địa chỉ Kafka broker của bạn
+```
 
-    # Tên của topic bạn muốn nhận tin nhắn từ
-    kafka_topic = 'my-topic'  # Thay thế bằng tên Kafka topic của bạn
+## Kafka
 
-    # Create a Spark session
-    spark = SparkSession.builder \
-        .appName("KafkaToConsole") \
-        .config("spark.jars", "/spark-sql-kafka-0-10_2.12-3.3.0.jar") \
-        .getOrCreate()
-    print("Before consume")
-    # Gọi hàm để nhận tin nhắn từ topic
-    consume_kafka_message(spark, bootstrap_servers, kafka_topic)
-    print("After consume")
+```
+Step 1: kafka-topics.sh --create --topic thanh-test --bootstrap-server localhost:9092
+Step 2: kafka-console-producer.sh --broker-list localhost:9020 --topic thanh-test
+```
+
+## Hadoop
+
+```
+hadoop fs -getmerge hdfs://namenode:8020/user/root/word_count/ thanh-test.json
 ```
