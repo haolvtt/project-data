@@ -1,49 +1,38 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import explode, split, window
-from pyspark.sql.types import TimestampType
-import logging
+from pyspark.sql.functions import expr
 
 if __name__ == "__main__":
-    # Tắt log của Spark
+    # Turn off Spark logs
     spark = SparkSession.builder.appName("KafkaSparkDemo").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
-
-    # Bạn cũng có thể tắt log cho các thư viện khác như Kafka
-    logger = logging.getLogger("py4j")
-    logger.setLevel(logging.ERROR)
 
     # Define Kafka parameters
     kafka_params = {
         "kafka.bootstrap.servers": "kafka:9092",
         "subscribe": "thanh-test",
-        "startingOffsets": "earliest",  # You can adjust this based on your needs
+        "startingOffsets": "latest",
+        "key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+        "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
     }
 
     # Read data from Kafka as a streaming DataFrame
     kafka_stream_df = spark.readStream.format("kafka").options(**kafka_params).load()
 
-    # Extract value column and split into words
-    words_df = kafka_stream_df.selectExpr("CAST(value AS STRING) as value", "timestamp").select(
-        explode(split("value", " ")).alias("word"),
-        "timestamp"
-    )
+    # Explicitly cast the 'value' column to STRING
+    kafka_stream_df = kafka_stream_df.withColumn("value", expr("CAST(value AS STRING)"))
 
-    # Apply watermark on eventTime column
-    words_df = words_df.withColumn("eventTime", words_df.timestamp.cast(TimestampType()))
-
-    # Perform word count with watermark
-    word_count_df = words_df.withWatermark("eventTime", "10 minutes") \
-        .groupBy(
-            window("eventTime", "10 minutes", "5 minutes"),
-            "word"
-        ).count()
-
-    # Output the result to the console (for testing purposes)
     # Define the HDFS output path
-    output_path = "hdfs://namenode:8020/user/root/word_count"
+    output_path = "hdfs://namenode:8020/user/root/kafka_data"
 
-    # Write the streaming DataFrame to HDFS in JSON format, append to existing file
-    word_count_df.writeStream \
-        .foreachBatch(lambda df, epoch_id: df.write.mode("append").json(output_path)) \
-        .start() \
-        .awaitTermination()
+    # Specify checkpoint location
+    checkpoint_location = "hdfs://namenode:8020/user/root/checkpoints"
+
+    # Write the streaming DataFrame to HDFS in JSON format, append to an existing file
+    query = kafka_stream_df.writeStream \
+        .outputMode("append") \
+        .format("json") \
+        .option("path", output_path) \
+        .option("checkpointLocation", checkpoint_location) \
+        .start()
+
+    query.awaitTermination()

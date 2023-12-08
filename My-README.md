@@ -31,6 +31,8 @@ if [ ! -z "${SPARK_APPLICATION_JAR_LOCATION}" ]; then
         --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 \
         --class ${SPARK_APPLICATION_MAIN_CLASS} \
         --master ${SPARK_MASTER_URL} \
+        --conf "spark.driver.extraJavaOptions=-Dkafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer" \
+        --conf "spark.executor.extraJavaOptions=-Dkafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer" \
         ${SPARK_SUBMIT_ARGS} \
         ${SPARK_APPLICATION_JAR_LOCATION} ${SPARK_APPLICATION_ARGS}
 else
@@ -40,6 +42,8 @@ else
         PYSPARK_PYTHON=python3  /spark/bin/spark-submit \
             --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 \
             --master ${SPARK_MASTER_URL} \
+            --conf "spark.driver.extraJavaOptions=-Dkafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer" \
+            --conf "spark.executor.extraJavaOptions=-Dkafka.key.deserializer=org.apache.kafka.common.serialization.StringDeserializer" \
             ${SPARK_SUBMIT_ARGS} \
             ${SPARK_APPLICATION_PYTHON_LOCATION} ${SPARK_APPLICATION_ARGS} \
     else
@@ -61,5 +65,5 @@ Step 2: kafka-console-producer.sh --broker-list localhost:9092 --topic thanh-tes
 ## Hadoop
 
 ```
-hadoop fs -getmerge hdfs://namenode:8020/user/root/word_count/ thanh-test.json
+hadoop fs -getmerge hdfs://namenode:8020/user/root/kafka_data/ kafka-test.json
 ```
