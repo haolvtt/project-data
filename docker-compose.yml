@@ -1,9 +1,7 @@
 version: "3"
 services:
   spark-submit-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: hieuthanh4a2/bigdata:latest
     environment:
       - SPARK_APPLICATION_PYTHON_LOCATION=/app/app.py
     depends_on:

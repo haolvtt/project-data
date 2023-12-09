@@ -1,21 +1,3 @@
-# How to run
-
-```
-Step 1: git clone 'this repository'
-Step 2: cd docker-hadoop-spark-workbench
-Step 3: docker-compose up -d
-Step 4: create file in hdfs
-Step 5: write spark code in app/app.py
-Step 6: run docker-compose build --no-cache spark-submit-app
-Step 7: run docker-compose up -d
-Step 8: Complete
-```
-
-# Spark-submit-app
-
-## file submit.sh
-
-```
 #!/bin/bash
 
 export SPARK_MASTER_URL=spark://${SPARK_MASTER_NAME}:${SPARK_MASTER_PORT}
@@ -52,40 +34,3 @@ else
 fi
 
 /finish-step.sh
-
-```
-
-## Kafka
-
-```
-Step 1: kafka-topics.sh --create --topic thanh-test --bootstrap-server localhost:9092
-Step 2: kafka-console-producer.sh --broker-list localhost:9092 --topic thanh-test
-```
-
-## Hadoop
-
-```
-hadoop fs -getmerge hdfs://namenode:8020/user/root/kafka_data/ kafka-test.json
-```
-
-### Cách chạy mới nhất (9/12/2023)
-
-```
-- Yêu cầu: 2 máy chung mạng LAN (bởi vì 1 máy yếu quá không chạy được)
-- Máy 1: Chạy các container bằng docker-compose up -d (ngoại trừ elasticsearch và kibana)
-- Máy 2: Chạy container elasticsearch và kibana
-- Kết quả: Data sẽ được vnstock -> crawl từ my_python_app -> kafka -> spark -> hadoop & elasticsearch -> kibana (visualize)
-```
-
-### Nếu mà gặp lỗi khi chạy namenode và datanode
-
-```
-net stop winnat
-docker start namenode
-net start winnat
-
-----------------------------------------------------------------
-# Nếu có lỗi liên quan đến safemode namenode
-hdfs dfsadmin -safemode leave
-
-```

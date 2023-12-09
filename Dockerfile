@@ -8,8 +8,14 @@ RUN echo "Build number: 1"
 # Copy ./app/template.sh from local to /
 COPY ./app/template.sh /
 
+# Edit file submit.sh in container
+
+
 # Copy all files from ./app in local to /app in container
 COPY ./app /app
+
+# Copy org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 to container
+# Copy org.elasticsearch:elasticsearch-hadoop:7.10.0 to container
 
 # Set the working directory to /app
 WORKDIR /app
