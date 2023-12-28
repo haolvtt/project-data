@@ -1,7 +1,9 @@
 version: "3"
 services:
   spark-submit-app:
-    image: hieuthanh4a2/bigdata:latest
+    build:
+      context: spark
+      dockerfile: Dockerfile
     environment:
       - SPARK_APPLICATION_PYTHON_LOCATION=/app/app.py
     depends_on:
@@ -9,7 +11,7 @@ services:
       - spark-worker-1
       - spark-worker-2
       - kafka
-      - my_python_app
+      - crawler
   namenode:
     image: bde2020/hadoop-namenode:1.1.0-hadoop2.8-java8
     container_name: namenode
@@ -36,7 +38,7 @@ services:
     image: bde2020/spark-master:3.3.0-hadoop3.3
     container_name: spark-master
     ports:
-      - "8080:8080"
+      - "8079:8080"
       - "7077:7077"
     environment:
       - INIT_DAEMON_STEP=setup_spark
@@ -90,32 +92,15 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
     depends_on:
       - zookeeper
-  my_python_app:
+  crawler:
     build:
-      context: .
-      dockerfile: Dockerfile_Python # Chỉ định sử dụng Dockerfile mới
+      context: crawler
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     depends_on:
       - kafka
       - zookeeper
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.2
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      - discovery.type=single-node
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.15.2
-    container_name: kibana
-    ports:
-      - "5601:5601"
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    depends_on:
-      - elasticsearch
 volumes:
   kafka-volume:
   zookeeper-volume:

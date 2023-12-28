@@ -89,3 +89,8 @@ net start winnat
 hdfs dfsadmin -safemode leave
 
 ```
+
+#
+
+spark-submit --packages org.elasticsearch:elasticsearch-spark-30_2.12:7.15.2 ./app/hadoop_to_elastic.py
+``

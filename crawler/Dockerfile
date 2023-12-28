@@ -11,8 +11,7 @@ RUN pip install vnstock
 RUN pip install beautifulsoup4
 
 # Copy file Python của bạn vào container
-COPY send_to_kafka.py /app/send_to_kafka.py
-COPY get_data_from_kafka.py /app/get_data_from_kafka.py
+COPY ./crawler.py /app/crawler.py
 
 # Chạy file Python khi container được khởi động
-CMD ["bash", "-c", "python /app/send_to_kafka.py && tail -f /dev/null"]
+CMD ["bash", "-c", "python /app/crawler.py && tail -f /dev/null"]
